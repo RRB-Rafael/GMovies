@@ -33,6 +33,7 @@ npx tailwindcss init
 // Carousel
 npm i react-native-reanimated-carousel
 npx expo install react-native-reanimated
+npm install react-native-worklets@^0.5.1
 
 // React Native heroicons
 npm i react-native-heroicons
@@ -45,3 +46,5 @@ npm i react-native-progress
 
 // Fetch API - Axios
 npm i axios
+
+themoviedb - RRB-Rafael / 09092008
