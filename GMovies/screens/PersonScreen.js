@@ -1,48 +1,125 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, Dimensions, ScrollView, TouchableOpacity, Image} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useNavigation, useRoute } from '@react-navigation/native'
-import { ChevronLeftIcon } from 'react-native-heroicons/solid'
-import { styles, theme } from '../theme';
-import { Shadow } from 'react-native-shadow-2'
-import MovieList from '../components/movieList'
+import { View, Text, Dimensions, ScrollView, TouchableOpacity, Image } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChevronLeftIcon } from 'react-native-heroicons/outline';
+import { HeartIcon } from 'react-native-heroicons/solid';
+import { styles } from '../theme';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import MovieList from '../components/movieList';
+import { fetchPersonDetails, fetchPersonMovies, image342 } from '../api/moviedb';
 
 var { width, height } = Dimensions.get('window');
 
 export default function PersonScreen() {
     const { params: item } = useRoute();
+    const [isFavorite, toggleFavorite] = useState(false);
     const navigation = useNavigation();
-    const [isFavorite, toggleFavorite] = useState(false)
-    const [personMovies, setPersonMoviews] = useState([1,2,3,4])
+    const [person, setPerson] = useState({});
+    const [personMovies, setPersonMovies] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        setLoading(true);
+        getPersonDetails(item.id);
+        getPersonMovies(item.id);
+    }, [item])
+
+    const getPersonDetails = async id => {
+        const data = await fetchPersonDetails(id);
+        if (data) setPerson(data);
+        setLoading(false);
+    }
+
+    const getPersonMovies = async id => {
+        const data = await fetchPersonMovies(id);
+        if (data && data.cast) setPersonMovies(data.cast);
+    }
+
     return (
         <ScrollView
-            contentContainerStyle={{ paddingBottom: 20, minHeight: '100%' }}
             className="flex-1 bg-neutral-900"
+            contentContainerStyle={{ paddingBottom: 20 }}
         >
-            {/* Botões de Navegação */}
-            <SafeAreaView className={"z-20 w-full flex-row justify-between items-center p4- pt-3"}>
+            {/* back button */}
+            <SafeAreaView className={"z-20 w-full flex-row justify-between items-center px-4 pt-3"}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.background} className="rounded-xl p-1">
                     <ChevronLeftIcon size="28" strokeWidth={2.5} color="white" />
                 </TouchableOpacity>
-            <Text className="text-white text-3xl font-bold">
-                <Text style={styles.text}>GM</Text>ovies
-            </Text>
-            <TouchableOpacity onPress={() => toggleFavorite(!isFavorite)}>
-                <HeartIcon size="36" color={isFavorite ? theme.background : "white"} />
-            </TouchableOpacity>
+                <TouchableOpacity onPress={() => toggleFavorite(!isFavorite)}>
+                    <HeartIcon size="36" color={isFavorite ? 'red' : 'white'} />
+                </TouchableOpacity>
             </SafeAreaView>
 
-            {/* Dados da Pessoa */}
-            <View>
-                <View className="flex-row justify-center">
-                    <Shadow className="items-center overflow-hidden h-72 w-72 border-3 border-neutral-500" startColor='rgb(60 60 60)'>
-                        <Image
-                          style={{ height: height * 0.42, width: width * 0.70, borderRadius: 150 }}
-                          source={require('../assets/image/actor.jpg')}
-                       />
-                    </Shadow>
-                </View>
-            </View>
+            {/* person details */}
+            {
+                loading ? (
+                    <Text className="text-white text-center">Carregando...</Text>
+                ) : (
+                    <View>
+                        <View className="flex-row justify-center"
+                            style={{
+                                shadowColor: 'gray',
+                                shadowRadius: 40,
+                                shadowOffset: { width: 0, height: 5 },
+                                shadowOpacity: 1
+                            }}
+                        >
+                            <View className="items-center rounded-full overflow-hidden h-72 w-72 border-2 border-neutral-500">
+                                <Image
+                                    source={{ uri: image342(person.profile_path) }}
+                                    style={{ height: height * 0.43, width: width * 0.74 }}
+                                />
+                            </View>
+                        </View>
+
+                        <View className="mt-6">
+                            <Text className="text-3xl text-white font-bold text-center">
+                                {person?.name}
+                            </Text>
+                            <Text className="text-base text-neutral-500 text-center">
+                                {person?.place_of_birth}
+                            </Text>
+                        </View>
+
+                        <View className="mx-3 mt-6 p-4 flex-row justify-between items-center bg-neutral-700 rounded-full">
+                            <View className="border-r-2 border-r-neutral-400 px-2 items-center">
+                                <Text className="text-white font-semibold">Gênero</Text>
+                                <Text className="text-neutral-300 text-sm">
+                                    {person?.gender == 1 ? 'Feminino' : 'Masculino'}
+                                </Text>
+                            </View>
+                            <View className="border-r-2 border-r-neutral-400 px-2 items-center">
+                                <Text className="text-white font-semibold">Nascimento</Text>
+                                <Text className="text-neutral-300 text-sm">
+                                    {person?.birthday}
+                                </Text>
+                            </View>
+                            <View className="border-r-2 border-r-neutral-400 px-2 items-center">
+                                <Text className="text-white font-semibold">Conhecido por</Text>
+                                <Text className="text-neutral-300 text-sm">
+                                    {person?.known_for_department}
+                                </Text>
+                            </View>
+                            <View className="px-2 items-center">
+                                <Text className="text-white font-semibold">Popularidade</Text>
+                                <Text className="text-neutral-300 text-sm">
+                                    {person?.popularity?.toFixed(2)}%
+                                </Text>
+                            </View>
+                        </View>
+
+                        <View className="my-6 mx-4 space-y-2">
+                            <Text className="text-white text-lg">Biografia</Text>
+                            <Text className="text-neutral-400 tracking-wide">
+                                {person?.biography || 'Nenhuma biografia disponível.'}
+                            </Text>
+                        </View>
+
+                        {/* movies */}
+                        <MovieList title="Filmes" hideSeeAll={true} data={personMovies} />
+                    </View>
+                )
+            }
         </ScrollView>
     )
 }
